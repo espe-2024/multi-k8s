@@ -5,13 +5,21 @@ env:
   global:
     - SHA=$(git rev-parse HEAD)
 before_install:
-  - echo "${DOCKER_PASSWORD}" || docker login -u ${DOCKER_USERNAME}  --password-stdin
   - docker build -t espe1992/react-test -f ./client/Dockerfile.dev ./client
 script:
   - docker run -e CI=true espe1992/react-test npm test -- --coverage
-deploy:
-  provier: script
-  script: bash ./deploy.sh
-  on:
-    branch: master
+after_success:
+  - docker build -t espe1992/multi-client:latest -t espe1992/multi-client:$SHA -f ./client/Dockerfile ./client
+  - docker build -t espe1992/multi-server:latest -t espe1992/multi-server:$SHA -f ./server/Dockerfile ./server
+  - docker build -t espe1992/multi-worker:latest -t espe1992/multi-worker:$SHA -f ./worker/Dockerfile ./worker
+  - echo "${DOCKER_PASSWORD}" || docker login -u ${DOCKER_USERNAME}  --password-stdin
+  - docker push espe1992/mutil-client:latest
+  - docker push espe1992/multi-server:latest
+  - docker push espe1992/multi-worker:latest
+  - docker push espe1992/mutil-client:$SHA
+  - docker push espe1992/multi-server:$SHA
+  - docker push espe1992/multi-worker:$SHA
+
+
+
 
